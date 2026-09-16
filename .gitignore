@@ -6,6 +6,8 @@ _tmp_pages/
 _verify/
 _verify*/
 _*_check.html
+_orphan_probe.html
+_h2c-*.html
 dom.txt
 
 # 系統檔

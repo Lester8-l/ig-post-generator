@@ -80,6 +80,13 @@ def main():
     if not names:
         raise SystemExit("找不到任何 data-filename 卡片，請確認 deck HTML 結構。")
 
+    # 臨時頁會換位置，用 <base> 把相對路徑（例如 leaf-bg.png）釘回原目錄
+    base_tag = f'<base href="{deck_path.parent.as_uri()}/">'
+    if "<head>" in html:
+        html = html.replace("<head>", "<head>\n" + base_tag, 1)
+    else:
+        html = base_tag + html
+
     print(f"browser : {browser}")
     print(f"cards   : {len(names)} -> {names}")
 
