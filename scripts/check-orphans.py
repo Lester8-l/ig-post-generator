@@ -51,8 +51,29 @@ PROBE_TEMPLATE = r"""
     document.body.appendChild(pre);
     document.title = 'PROBE_DONE';
   }
+  // 有旋轉／縮放的元素：每個字的 y 座標都不同，逐字分行的邏輯會誤判，直接跳過
+  function isTransformed(el, stopAt){
+    var n = el;
+    while (n && n !== stopAt) {
+      var tf = getComputedStyle(n).transform;
+      if (tf && tf !== 'none') {
+        var m = tf.match(/matrix\(([^)]+)\)/);
+        if (m) {
+          var v = m[1].split(',').map(parseFloat);
+          // matrix(a,b,c,d,e,f)：a=1,b=0,c=0,d=1 才是無旋轉／縮放
+          if (Math.abs(v[0] - 1) > 0.001 || Math.abs(v[1]) > 0.001 ||
+              Math.abs(v[2]) > 0.001 || Math.abs(v[3] - 1) > 0.001) return true;
+        } else {
+          return true;  // matrix3d 或其他形式，保守跳過
+        }
+      }
+      n = n.parentElement;
+    }
+    return false;
+  }
+
   function run(){
-    var report = [];
+    var report = [], skipped = 0;
     document.querySelectorAll('.card').forEach(function(card){
       var name = card.dataset.filename || 'card';
       var walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
@@ -62,8 +83,10 @@ PROBE_TEMPLATE = r"""
         if (!t || !t.trim()) continue;
         var el = node.parentElement;
         if (!el || el.closest('[data-noexport]')) continue;
+        if (el.hasAttribute('data-orphan-skip')) { skipped++; continue; }
         var cs = getComputedStyle(el);
         if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+        if (isTransformed(el, card)) { skipped++; continue; }
 
         var keys = [], lines = {};
         for (var i = 0; i < t.length; i++) {
@@ -95,7 +118,7 @@ PROBE_TEMPLATE = r"""
         }
       }
     });
-    finish(report);
+    finish({ report: report, skipped: skipped });
   }
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(function(){ setTimeout(run, 1200); });
@@ -169,10 +192,14 @@ def main():
 
     raw = html_mod.unescape(m.group(1)).strip()
     try:
-        report = json.loads(raw)
+        payload = json.loads(raw)
     except json.JSONDecodeError:
         print("⚠ 無法解析偵測結果：", raw[:200])
         sys.exit(2)
+    report = payload.get("report", [])
+    skipped = payload.get("skipped", 0)
+    if skipped:
+        print(f"（已跳過 {skipped} 個旋轉／標記元素，逐字分行對它們不適用）")
 
     if not report:
         print(f"✓ 沒有孤字。所有多行文字區塊每行都 ≥ {args.min_chars} 個字。")
