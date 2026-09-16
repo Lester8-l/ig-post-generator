@@ -54,21 +54,31 @@ agent_created: true
 - **裝飾** `.deco`：blur 圓形，sage／beige 色，放角落且 z-index 低於 frame。
 - **頁尾**：每卡 `.handle` 置中顯示帳號。
 
-## 色票 tokens（來源 lesterliang.com，勿改色值）
+## 色票 tokens（來源 lesterliang.com，名稱與網站一致，勿改色值）
 
 ```
---warm-white: #FFFDF8   頁面底
---cream:      #FAF9F7   卡片底
---beige:      #F4F0E6   米色面塊／note-box
---beige-deep: #E8DFD0   邊框
---forest:     #2E5E4E   主色（badge、icon、裝飾）
---forest-deep:#234839   大標文字
---forest-soft:#3D6B58   次要強調
---forest-tint:#E7EFEB   淺綠藥丸底
---gold:       #B8893B   關鍵字、分隔線
---gold-soft:  #C9A464   裝飾線、箭頭
---ink-soft:   #6B6256   正文、頁尾
---sage:       #A8BFB2   裝飾圓
+--warm-white: #FFFDF8          頁面底
+--cream:      #FAF9F7          卡片底
+--paper:      #F4F0E6          米色面塊／note-box
+--gray:       #EBE8E0          次要面塊
+--forest:     #2E5E4E          主色（badge、icon）
+--forest-deep:#234839          標題
+--forest-soft:#3D6B58          次要強調
+--forest-tint:#E7EFEB          淺綠藥丸底
+--gold:       #B8893B          關鍵字、分隔線
+--gold-soft:  #C9A464          裝飾線、箭頭
+--ink-soft:   #6B6256          正文、頁尾
+--sage:       #A8BFB2          裝飾圓
+--charcoal:   #14201B          最深文字
+--on-forest:  #F7F5F0          深底上的文字
+--line:       rgba(20,32,27,.10)  網站標準細線
+--line-warm:  #E8DFD0          IG 卡片專用暖色框線（網站無此 token）
+```
+
+網站另有 dark theme 對應值（`--cream:#1A1E1C`、`--forest:#7FB39E`、`--gold:#D4A869` 等）與圓角規範（`--radius-card:18px`、`--radius-pill:999px`）。要重新抽取或確認最新色值，用 `html-render-verify` skill 的 `extract-tokens.py`：
+
+```bash
+python ~/.workbuddy/skills/html-render-verify/scripts/extract-tokens.py https://www.lesterliang.com/
 ```
 
 字體：`Noto Serif TC`（中文全部）＋ `Cormorant Garamond`（英文數字、badge）＋ `Noto Sans TC`（工具列 UI），走 Google Fonts。

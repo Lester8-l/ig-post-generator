@@ -70,16 +70,23 @@ ig-post-skill/
 
 ## 自訂
 
-改 `assets/template.html` 最上方的 `:root` 區塊即可整套換色 —— 所有卡片都吃同一組 token，不會有零散樣式。
+改 `assets/template.html` 最上方的 `:root` 區塊即可整套換色 —— 所有卡片都吃同一組 token，不會有零散樣式。變數名稱沿用 [lesterliang.com](https://www.lesterliang.com/) 的命名（`--forest`、`--paper`、`--gold`…），要換成自己的色值，改數值就好、不用改名字。
 
 ```css
 :root{
-  --forest:#2E5E4E;      /* 主色：badge、icon、藥丸深底 */
-  --forest-deep:#234839; /* 大標文字 */
+  --forest:#2E5E4E;      /* 主色：badge、icon */
+  --forest-deep:#234839; /* 標題 */
   --gold:#B8893B;        /* 關鍵字、分隔線 */
-  --beige:#F4F0E6;       /* 米色面塊 */
+  --paper:#F4F0E6;       /* 米色面塊 */
   --ink-soft:#6B6256;    /* 正文 */
+  --line-warm:#E8DFD0;   /* IG 卡片專用暖色框線 */
 }
+```
+
+要去別的網站抓色票／字體，用姊妹 skill `html-render-verify` 的 `extract-tokens.py`：
+
+```bash
+python extract-tokens.py https://example.com
 ```
 
 底部 `@lesterliang` 帳號字串在每張卡的 `.handle`，全域替換即可。

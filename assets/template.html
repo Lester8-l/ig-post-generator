@@ -13,18 +13,24 @@
    Lester IG Post tokens（來源 lesterliang.com，勿改色值）
    ============================================================ */
 :root{
-  --warm-white:#FFFDF8;
-  --cream:#FAF9F7;
-  --beige:#F4F0E6;
-  --beige-deep:#E8DFD0;
-  --forest:#2E5E4E;
-  --forest-deep:#234839;
-  --forest-soft:#3D6B58;
-  --forest-tint:#E7EFEB;
-  --gold:#B8893B;
-  --gold-soft:#C9A464;
-  --ink-soft:#6B6256;
-  --sage:#A8BFB2;
+  /* ── 取自 lesterliang.com 的 token（名稱與網站一致，勿改色值）── */
+  --warm-white:#FFFDF8;       /* 頁面底 */
+  --cream:#FAF9F7;            /* 卡片底 */
+  --paper:#F4F0E6;            /* 米色面塊 */
+  --gray:#EBE8E0;             /* 次要面塊 */
+  --forest:#2E5E4E;           /* 主色：badge、icon */
+  --forest-deep:#234839;      /* 深綠：標題 */
+  --forest-soft:#3D6B58;      /* 次要強調 */
+  --forest-tint:#E7EFEB;      /* 淺綠藥丸底 */
+  --gold:#B8893B;             /* 關鍵字、分隔線 */
+  --gold-soft:#C9A464;        /* 裝飾線、箭頭 */
+  --ink-soft:#6B6256;         /* 正文、頁尾 */
+  --sage:#A8BFB2;             /* 裝飾圓 */
+  --charcoal:#14201B;         /* 最深文字 */
+  --on-forest:#F7F5F0;        /* 深底上的文字 */
+  --line:rgba(20,32,27,.10);  /* 網站標準細線 */
+  /* 以下為 IG 卡片專用（網站無此 token）：暖色框線，對齊參考圖的細邊框 */
+  --line-warm:#E8DFD0;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{
@@ -61,7 +67,7 @@ body{
   background:var(--cream);flex-shrink:0;
 }
 .frame{
-  position:absolute;inset:56px;border:1.5px solid var(--beige-deep);
+  position:absolute;inset:56px;border:1.5px solid var(--line-warm);
   border-radius:48px;
 }
 .deco{
@@ -90,9 +96,9 @@ em{font-style:normal;color:var(--gold);}
   font-size:38px;font-weight:600;color:var(--forest-deep);line-height:1.5;
   text-align:center;
 }
-.pill.alt{background:var(--beige);}
+.pill.alt{background:var(--paper);}
 .note-box{
-  background:var(--beige);border-radius:32px;padding:56px 70px;
+  background:var(--paper);border-radius:32px;padding:56px 70px;
   font-size:42px;line-height:2.1;color:var(--ink-soft);
   letter-spacing:.18em;text-indent:.18em;font-weight:400;text-align:center;
 }
@@ -109,7 +115,7 @@ em{font-style:normal;color:var(--gold);}
   flex:1;max-width:196px;background:var(--forest-tint);border-radius:28px;
   padding:34px 12px 36px;display:flex;flex-direction:column;align-items:center;gap:20px;
 }
-.grid4 .cell:nth-child(even){background:var(--beige);}
+.grid4 .cell:nth-child(even){background:var(--paper);}
 .grid4 .cell .num{width:52px;height:52px;font-size:28px;}
 .grid4 .cell .word{font-size:38px;font-weight:700;color:var(--forest-deep);}
 .grid4 .cell svg{width:92px;height:92px;stroke:var(--forest);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
@@ -149,7 +155,7 @@ em{font-style:normal;color:var(--gold);}
   <!-- ═══════════ 卡 1 · Hook 封面 ═══════════ -->
   <div class="card-wrap">
     <div class="card" data-filename="01-hook">
-      <div class="deco" style="width:340px;height:340px;top:-110px;left:-90px;background:var(--beige);opacity:.7;"></div>
+      <div class="deco" style="width:340px;height:340px;top:-110px;left:-90px;background:var(--paper);opacity:.7;"></div>
       <div class="frame"></div>
       <div class="content">
         <div class="hook-title">如果你是<br>30–50 歲、<br>正站在<em>人生轉彎位</em></div>
@@ -181,7 +187,7 @@ em{font-style:normal;color:var(--gold);}
   <!-- ═══════════ 卡 3 · 段落 + 藥丸條 ═══════════ -->
   <div class="card-wrap">
     <div class="card" data-filename="03-pills">
-      <div class="deco" style="width:280px;height:280px;top:-90px;right:-60px;background:var(--beige);opacity:.8;"></div>
+      <div class="deco" style="width:280px;height:280px;top:-90px;right:-60px;background:var(--paper);opacity:.8;"></div>
       <div class="frame"></div>
       <div class="content left">
         <div class="para">如果人生的轉變靠的是<strong>清晰</strong>，<br>你真正需要的，<br>不是更多意見和標準答案，<br>而是一套能回到日常的方法。</div>
@@ -217,7 +223,7 @@ em{font-style:normal;color:var(--gold);}
   <!-- ═══════════ 卡 5 · 四欄格（人生選擇設計法） ═══════════ -->
   <div class="card-wrap">
     <div class="card" data-filename="05-grid">
-      <div class="deco" style="width:320px;height:320px;bottom:-110px;left:-90px;background:var(--beige);opacity:.7;"></div>
+      <div class="deco" style="width:320px;height:320px;bottom:-110px;left:-90px;background:var(--paper);opacity:.7;"></div>
       <div class="frame"></div>
       <div class="content">
         <div class="statement-kicker" style="font-size:40px;">人生選擇設計法，五個階段：</div>
