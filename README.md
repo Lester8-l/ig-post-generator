@@ -4,6 +4,8 @@
 
 這是 [Claude Code](https://claude.com/claude-code) / WorkBuddy 的 **Skill**：給它一篇你的文章，它會拆卡、套版、生成 HTML，你在瀏覽器打開就能下載圖片。
 
+> Repo：https://github.com/Lester8-l/ig-post-generator
+
 - **版型骨架** 參考 `cathy.simplebusiness` 的文字卡風格：大字襯線標題、細邊框、藥丸 highlight、圓形數字 badge、四欄概念格。
 - **色調字體** 取自 [lesterliang.com](https://www.lesterliang.com/)：森林綠 × 暖金 × 米白，Noto Serif TC ＋ Cormorant Garamond。
 
@@ -12,12 +14,17 @@
 **1. 裝 skill**
 
 ```bash
-# macOS / Linux
-cp -r ig-post-skill ~/.claude/skills/ig-post-generator
+# 直接 clone 到 skills 目錄（推薦）
+git clone https://github.com/Lester8-l/ig-post-generator.git ~/.workbuddy/skills/ig-post-generator
 
-# Windows (PowerShell)
-Copy-Item -Recurse ig-post-skill "$env:USERPROFILE\.workbuddy\skills\ig-post-generator"
+# macOS / Linux 舊路徑（Claude Code）
+git clone https://github.com/Lester8-l/ig-post-generator.git ~/.claude/skills/ig-post-generator
+
+# 不想用 git 就手動複製資料夾
+Copy-Item -Recurse ig-post-generator "$env:USERPROFILE\.workbuddy\skills\ig-post-generator"
 ```
+
+之後想更新：`cd ~/.workbuddy/skills/ig-post-generator && git pull`
 
 **2. 用**
 
