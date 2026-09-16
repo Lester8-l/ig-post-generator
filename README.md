@@ -55,6 +55,7 @@ ig-post-skill/
 ├─ scripts/
 │  ├─ export-png.py      # headless Chrome 批次出圖（零依賴）
 │  ├─ check-orphans.py   # 偵測「一個字一行」
+│  ├─ check-fit.py       # 偵測內容溢出裁切（含垂直置中量測）
 │  ├─ embed-leaf.py      # 把樹葉 PNG 內嵌成 base64
 │  └─ make-leaf-bg.py    # 從棋盤格 JPG 去背成透明 PNG
 └─ examples/
@@ -108,15 +109,23 @@ window.IG_CONFIG = {
 
 內容區淨寬 788px，中文一字約 1em，所以每行字數有上限：
 
-| 字級 | 80px | 64px | 48px | 44px | 42px | 40px | 38px | 36px |
-|---|---|---|---|---|---|---|---|---|
-| 建議每行字數 | ≤8 | ≤11 | ≤14 | ≤15 | ≤16 | ≤17 | ≤18 | ≤19 |
+| 元素 | 字級 | 建議每行字數 |
+|---|---|---|
+| Hook 大標 | 88px | ≤ 8 |
+| 重點句 | 56px | ≤ 12 |
+| CTA／引號清單 | 52px | ≤ 12 |
+| 正文、小標 | 48px | ≤ 14 |
+| note-box（手寫） | 48px | ≤ 11 |
+| 藥丸條 | 44px | ≤ 14 |
 
-手動 `<br>` 斷行是主要手段（`text-wrap:pretty` 對中文幫助有限）。跑檢查確認：
+手動 `<br>` 斷行是主要手段（`text-wrap:pretty` 對中文幫助有限）。兩支檢查都要跑：
 
 ```bash
-python scripts/check-orphans.py deck.html
+python scripts/check-orphans.py deck.html   # 一個字一行
+python scripts/check-fit.py deck.html       # 內容裝不下被裁切
 ```
+
+`check-fit.py` 會列出每張卡的內容高度與上下留白。**留白低於 50px 就該減字或降一級字級。**
 
 ## 自訂
 

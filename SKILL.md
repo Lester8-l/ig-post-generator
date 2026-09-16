@@ -21,11 +21,13 @@ agent_created: true
    - **最後一卡 · CTA**：行動呼籲（DM 關鍵字、追蹤、預約連結）。
 3. **生成 HTML**：複製 `assets/template.html` 的完整結構與 CSS，只替換每張卡 `.content` 內的文字（連 `<style>` 與 base64 素材一起保留，切勿只用片段）。
 4. **改設定區**（見下節）：`handle` 一定要改成這次要發的帳號；`leaves` 決定要不要樹葉背景。
-5. **跑檢查**（兩支都要跑，很便宜）：
+5. **跑檢查**（三支都要跑，很便宜、幾秒鐘）：
    ```
-   python scripts/check-orphans.py <deck.html>       # 抓「一個字一行」
-   python scripts/export-png.py <deck.html> --out out/   # 出圖
+   python scripts/check-orphans.py <deck.html>        # 抓「一個字一行」
+   python scripts/check-fit.py <deck.html>            # 抓「內容裝不下被裁切」
+   python scripts/export-png.py <deck.html> --out out/  # 出圖
    ```
+   `check-fit.py` 看的是每張卡的上下留白。**留白低於 50px 就該減字或降一級字級**——溢出被 `overflow:hidden` 切掉時畫面常常看不出來。
 6. **交付**：`present_files` 同時給 HTML（可預覽、可微調）與 PNG（可直接發）。檢查若有孤字，修好再交付。
 
 ## 設定區（每次生成只改這裡）
@@ -64,18 +66,19 @@ window.IG_CONFIG = {
 
 `text-wrap:pretty` 對中文幫助有限（已內建當保險），**真正可靠的是控制每行字數**。
 
-內容區淨寬 = 1080 − 2×56（卡邊距）− 2×90（內距）= **788px**。中文一個字約佔 1em，所以：
+內容區淨寬 = 1080 − 2×56（卡邊距）− 2×90（內距）= **788px**。中文一個字約佔 1em：
 
-| 字級 | 理論上限 | 建議每行字數 |
-|---|---|---|
-| 80px（大標） | 9 | **≤ 8** |
-| 64px | 12 | ≤ 11 |
-| 48px | 16 | ≤ 14 |
-| 44px | 17 | ≤ 15 |
-| 42px | 18 | ≤ 16 |
-| 40px | 19 | ≤ 17 |
-| 38px（藥丸條） | 20 | ≤ 18（藥丸另有 40px 內距） |
-| 36px | 21 | ≤ 19 |
+| 元素 | 字級 | 淨文字寬 | 建議每行字數 |
+|---|---|---|---|
+| Hook 大標 | 88px | 788 | **≤ 8** |
+| 重點句 statement-body | 56px | 788 | ≤ 12 |
+| CTA／引號清單 | 52px | 788／696※ | ≤ 12 |
+| 正文 para、小標 kicker | 48px | 788 | ≤ 14 |
+| note-box（字距 .08em） | 48px | 656 | ≤ 11 |
+| 藥丸條 pill | 44px | 708 | ≤ 14 |
+| 清單前言 list-intro | 44px | 788 | ≤ 15 |
+
+※ 引號清單每項有 64px 數字 badge + 36px 間距，可用文字寬只有 696px。
 
 做法：
 1. 手動用 `<br>` 決定每一行，別讓瀏覽器自己斷。
@@ -90,13 +93,16 @@ window.IG_CONFIG = {
 - **外框**：卡片內留 56px 邊距，內有圓角 48px、1.5px 細邊框的 frame —— 風格的 signature。
 - **內容區**：`inset:56px; padding:80px 90px`，flex column 垂直置中。可用高度約 1038px；文字過多會被 `overflow:hidden` 靜默裁切。
 - **圖層順序**：裝飾圓 0 → 樹葉 1 → 外框 2 → 內容 3 → 頁尾 4。
-- **字級**：
-  - Hook 大標 80px / line-height 1.5 / 700
-  - 卡片標題、重點句 48–66px / 700
-  - 正文 38–42px / line-height 1.9–2.0 / 400
-  - 藥丸條 38px / 700 / 文字置中
-  - note-box 44px / letter-spacing .08em（手寫體）
-  - 頁尾 handle 26px
+- **字級**（2026-09 整體放大一階，對齊參考圖的視覺重量）：
+  - Hook 大標 88px / line-height 1.45 / 700
+  - 重點句（statement-body）56px / line-height 1.9 / 700
+  - CTA、引號清單 52px / 700
+  - 正文 para、小標 kicker 48px / line-height 1.9 / 400
+  - note-box 48px / letter-spacing .08em（手寫體）
+  - 藥丸條 44px / 700 / 文字置中
+  - 清單前言 44px
+  - 頁尾 handle 28px
+  - 數字 badge 64px 圓 / 34px 字
 - **強調手法**（風格靈魂，每卡至少一種）：
   - 關鍵字變色 `<em>` = gold，不加斜體
   - 分隔線 `.divider`（64px gold-soft 橫線）或 `.divider.short`
@@ -165,6 +171,7 @@ python ~/.workbuddy/skills/html-render-verify/scripts/extract-tokens.py https://
 - `assets/leaf-bg.png` — 樹葉素材原始檔（可換）。
 - `scripts/export-png.py` — headless Chrome 批次出 1080×1350 PNG，零依賴。
 - `scripts/check-orphans.py` — 偵測「一個字一行」，有問題回傳 exit 1。
+- `scripts/check-fit.py` — 量每張卡內容高度與上下留白，抓溢出裁切，有問題回傳 exit 1。
 - `scripts/embed-leaf.py` — 把樹葉 PNG 內嵌成 base64。
 - `scripts/make-leaf-bg.py` — 從棋盤格 JPG 去背產生透明 PNG。
 - `examples/` — 示範輸入文章、示範成品 HTML 與六張 PNG。
