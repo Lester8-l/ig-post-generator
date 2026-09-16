@@ -1,0 +1,11 @@
+# 匯出產物
+out/
+_tmp_pages/
+
+# 驗證暫存
+_verify/
+
+# 系統檔
+.DS_Store
+Thumbs.db
+desktop.ini

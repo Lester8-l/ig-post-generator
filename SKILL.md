@@ -1,0 +1,91 @@
+---
+name: ig-post-generator
+description: 把一篇文章轉成 Instagram 圖文輪播（HTML 排版 + 一鍵出 1080×1350 PNG）。當用戶說「幫我出 IG 貼文」「把這篇文章變成 IG 圖」「做一個 IG carousel」「IG post 圖」「輪播圖」時使用。
+agent_created: true
+---
+
+# IG Post Generator · Lester Liang 版
+
+用 HTML 排版製作出 Instagram 貼文圖（1080×1350 直度輪播卡），風格骨架參考文字卡排版，色調採用 lesterliang.com 的森林綠 × 暖金大地色系。
+
+## 觸發條件
+
+用戶說「幫我出 IG 貼文」「把這篇文章變成 IG 圖」「做一個 IG carousel」「IG post」等，並提供文章／主題／草稿時使用。即使只給一個主題（沒有全文）也可以，這時由你先把主題寫成短文，再拆卡。
+
+## 工作流程
+
+1. **讀輸入**：完整文章、幾段想法、或只有一個主題。
+2. **拆卡**：拆成 5–8 張輪播卡：
+   - **卡 1 · Hook 封面**：一句鉤子大標，讓人想滑下去。句式參考「如果你是……」或「你不需要……」。
+   - **卡 2–N · 內文卡**：每卡只講一個重點，單卡正文不超過 90 字。長句拆行，寧少勿多。
+   - **最後一卡 · CTA**：行動呼籲（DM 關鍵字、追蹤、預約連結）。
+3. **生成 HTML**：複製 `assets/template.html` 的完整結構與 CSS，只替換每張卡 `.content` 內的文字（連 `<style>` 一起保留，切勿只用片段）。視內容增減卡數、挑選合適的卡片類型；`data-filename` 改成有意義的檔名（如 `01-hook`、`03-trust`）。
+4. **出圖**（兩種，任選或都做）：
+   - **命令列（建議，agent 直接做）**：
+     ```
+     python scripts/export-png.py <deck.html> --out out/
+     ```
+     自動找本機 Chrome／Edge，逐卡輸出 1080×1350 PNG，檔名取自 `data-filename`。若 Chrome 路徑特殊，加 `--chrome "<path>"`。
+   - **瀏覽器**：把 HTML 交給用戶，開啟後點每張卡下方「下載此卡」，或右上角「下載全部」一次匯出（html2canvas，需聯網）。
+5. **交付**：`present_files` 同時給 HTML（可預覽、可微調）與 PNG（可直接發）。
+
+## 版型規則（跟參考圖對齊）
+
+畫布 1080 × 1350 px（4:5）。所有尺寸寫死 px，不做響應式。
+
+- **外框**：卡片內留 56px 邊距，內有圓角 48px、1.5px 細邊框的 frame —— 這是風格的 signature。
+- **內容區**：`inset:56px; padding:80px 90px`，flex column 垂直置中。可用高度約 1038px；文字過多會被裁切，拆卡時就要控制份量。
+- **字級**（Noto Serif TC）：
+  - Hook 大標：76–88px / line-height 1.5 / weight 900
+  - 卡片標題、重點句：60–66px / 700
+  - 正文：38–42px / line-height 1.9–2.0 / 400
+  - 藥丸條：38px / 600（文字置中）
+  - note-box：42px / letter-spacing .18em
+  - 頁尾 handle：26px
+- **強調手法**（風格靈魂，每卡至少一種）：
+  - 關鍵字變色 `<em>` = gold，不加斜體
+  - 分隔線 `.divider`（64px gold-soft 橫線）或 `.divider.short`
+  - 箭頭 `.arrow` ↓ 單獨一行置中
+  - 藥丸條 `.pill` / `.pill.alt`（forest-tint 與 beige 交替）
+  - 數字 badge `.num`（圓形 forest 底白字，Cormorant 數字）
+  - 引號句「……」直接放正文，關鍵字用 `<em>`
+  - `.note-box` 米色圓角方框，字距放寬做手寫感
+- **四欄格** `.grid4`：4 個並列概念，數字 → 詞 → SVG 線條 icon（`stroke:var(--forest)`，viewBox 24×24，92px）。**禁止 Emoji**，只用手繪風格 SVG。
+- **裝飾** `.deco`：blur 圓形，sage／beige 色，放角落且 z-index 低於 frame。
+- **頁尾**：每卡 `.handle` 置中顯示帳號。
+
+## 色票 tokens（來源 lesterliang.com，勿改色值）
+
+```
+--warm-white: #FFFDF8   頁面底
+--cream:      #FAF9F7   卡片底
+--beige:      #F4F0E6   米色面塊／note-box
+--beige-deep: #E8DFD0   邊框
+--forest:     #2E5E4E   主色（badge、icon、裝飾）
+--forest-deep:#234839   大標文字
+--forest-soft:#3D6B58   次要強調
+--forest-tint:#E7EFEB   淺綠藥丸底
+--gold:       #B8893B   關鍵字、分隔線
+--gold-soft:  #C9A464   裝飾線、箭頭
+--ink-soft:   #6B6256   正文、頁尾
+--sage:       #A8BFB2   裝飾圓
+```
+
+字體：`Noto Serif TC`（中文全部）＋ `Cormorant Garamond`（英文數字、badge）＋ `Noto Sans TC`（工具列 UI），走 Google Fonts。
+
+## 合規（保險／金融內容適用）
+
+涉及保險或投資時：禁止「保證、穩賺、零風險、像定存」等詞；非保證利益必須標示；過往績效同句標註「過往不代表未來」。
+
+## 常見坑
+
+- **務必保留完整 `<style>`**：只抄卡片 HTML 會完全走版。
+- **匯出前等字體**：Google Fonts 未載入完就出圖會退成系統襯線字。命令列腳本已用 `--virtual-time-budget=10000` 處理。
+- **字數超量**：內容超過可用高度會被 `overflow:hidden` 裁掉，不是自動縮小。拆卡時先估字數。
+- **單卡下載鈕**：`.btn-dl`、`.toolbar`、`.card-label` 都標了 `data-noexport` / 被腳本隱藏，不會畫進圖內。
+
+## 檔案
+
+- `assets/template.html` — 主模板，六種卡片類型 + 瀏覽器匯出功能。生成新貼文時以此為底。
+- `scripts/export-png.py` — headless Chrome 批次出圖，零依賴（只用標準庫）。
+- `examples/` — 示範輸入文章、示範成品 HTML 與六張 PNG。

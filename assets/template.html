@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IG 貼文產生器 · Lester Liang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;500;700&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+/* ============================================================
+   Lester IG Post tokens（來源 lesterliang.com，勿改色值）
+   ============================================================ */
+:root{
+  --warm-white:#FFFDF8;
+  --cream:#FAF9F7;
+  --beige:#F4F0E6;
+  --beige-deep:#E8DFD0;
+  --forest:#2E5E4E;
+  --forest-deep:#234839;
+  --forest-soft:#3D6B58;
+  --forest-tint:#E7EFEB;
+  --gold:#B8893B;
+  --gold-soft:#C9A464;
+  --ink-soft:#6B6256;
+  --sage:#A8BFB2;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:#EDEAE3;
+  font-family:"Noto Serif TC","Noto Sans TC",serif;
+  padding:40px 20px 80px;
+}
+.toolbar{
+  max-width:1080px;margin:0 auto 36px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;
+}
+.toolbar h1{font-size:22px;color:var(--forest-deep);font-weight:700;}
+.toolbar .hint{font-size:14px;color:var(--ink-soft);font-family:"Noto Sans TC",sans-serif;}
+.btn-all{
+  font-family:"Noto Sans TC",sans-serif;font-size:16px;font-weight:700;
+  background:var(--forest);color:#fff;border:none;border-radius:999px;
+  padding:12px 28px;cursor:pointer;
+}
+.btn-all:disabled{opacity:.5;cursor:wait;}
+.deck{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:56px;}
+
+/* ============================================================
+   卡片畫布 1080 × 1350
+   ============================================================ */
+.card-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;}
+.card-label{font-family:"Noto Sans TC",sans-serif;font-size:14px;color:var(--ink-soft);}
+.btn-dl{
+  font-family:"Noto Sans TC",sans-serif;font-size:15px;font-weight:500;
+  background:#fff;color:var(--forest);border:1.5px solid var(--forest);
+  border-radius:999px;padding:9px 24px;cursor:pointer;
+}
+.btn-dl:disabled{opacity:.5;cursor:wait;}
+.card{
+  width:1080px;height:1350px;position:relative;overflow:hidden;
+  background:var(--cream);flex-shrink:0;
+}
+.frame{
+  position:absolute;inset:56px;border:1.5px solid var(--beige-deep);
+  border-radius:48px;
+}
+.deco{
+  position:absolute;border-radius:50%;filter:blur(2px);
+}
+.content{
+  position:absolute;inset:56px;padding:80px 90px;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
+  text-align:center;
+}
+.handle{
+  position:absolute;bottom:88px;left:0;right:0;text-align:center;
+  font-family:"Cormorant Garamond","Noto Serif TC",serif;
+  font-size:26px;letter-spacing:.14em;color:var(--ink-soft);
+}
+
+/* ---------- 共用元件 ---------- */
+em{font-style:normal;color:var(--gold);}
+.forest{color:var(--forest-soft);}
+.divider{width:64px;height:2px;background:var(--gold-soft);margin:44px auto;}
+.divider.short{width:44px;margin:36px 0;}
+.arrow{font-size:52px;color:var(--gold-soft);line-height:1;margin:36px 0;font-weight:400;}
+.pill{
+  display:block;width:100%;margin:0 auto 30px;
+  background:var(--forest-tint);border-radius:999px;padding:30px 40px;
+  font-size:38px;font-weight:600;color:var(--forest-deep);line-height:1.5;
+  text-align:center;
+}
+.pill.alt{background:var(--beige);}
+.note-box{
+  background:var(--beige);border-radius:32px;padding:56px 70px;
+  font-size:42px;line-height:2.1;color:var(--ink-soft);
+  letter-spacing:.18em;text-indent:.18em;font-weight:400;text-align:center;
+}
+.num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:58px;height:58px;border-radius:50%;flex-shrink:0;
+  background:var(--forest);color:#fff;
+  font-family:"Cormorant Garamond",serif;font-size:32px;font-weight:600;
+}
+.quote-list{list-style:none;display:flex;flex-direction:column;gap:52px;text-align:left;}
+.quote-list li{display:flex;align-items:center;gap:34px;font-size:44px;font-weight:700;color:var(--forest-deep);}
+.grid4{display:flex;gap:24px;width:100%;justify-content:center;margin:48px 0;}
+.grid4 .cell{
+  flex:1;max-width:196px;background:var(--forest-tint);border-radius:28px;
+  padding:34px 12px 36px;display:flex;flex-direction:column;align-items:center;gap:20px;
+}
+.grid4 .cell:nth-child(even){background:var(--beige);}
+.grid4 .cell .num{width:52px;height:52px;font-size:28px;}
+.grid4 .cell .word{font-size:38px;font-weight:700;color:var(--forest-deep);}
+.grid4 .cell svg{width:92px;height:92px;stroke:var(--forest);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ---------- 卡 1 · Hook 封面 ---------- */
+.hook-title{font-size:80px;font-weight:900;color:var(--forest-deep);line-height:1.5;}
+.hook-sub{font-size:40px;color:var(--ink-soft);line-height:1.9;margin-top:44px;font-weight:400;}
+.hook-cta{font-size:44px;font-weight:700;color:var(--forest-deep);margin-top:44px;line-height:1.7;}
+
+/* ---------- 卡 2 · Statement ---------- */
+.statement-kicker{font-size:44px;color:var(--ink-soft);font-weight:400;letter-spacing:.1em;line-height:1.8;}
+.statement-lead{font-size:40px;color:var(--gold);font-weight:700;letter-spacing:.15em;margin-top:40px;}
+.statement-body{font-size:48px;font-weight:700;color:var(--forest-deep);line-height:2.0;margin-top:48px;}
+
+/* ---------- 卡 3 · 左對齊段落 ---------- */
+.left{text-align:left;align-items:flex-start;}
+.para{font-size:42px;line-height:2.0;color:var(--ink-soft);font-weight:400;}
+.para strong{font-weight:700;color:var(--forest-deep);}
+.kicker{font-size:42px;font-weight:700;color:var(--gold);letter-spacing:.08em;margin:44px 0 40px;}
+
+/* ---------- 卡 5 · 引號清單 ---------- */
+.list-intro{font-size:38px;line-height:1.9;color:var(--ink-soft);margin-bottom:64px;}
+</style>
+</head>
+<body>
+
+<div class="toolbar" data-noexport>
+  <div>
+    <h1>IG 貼文 · 1080 × 1350</h1>
+    <div class="hint">等字體載入完成（約 2–3 秒）再匯出，文字才不會跑版</div>
+  </div>
+  <button class="btn-all" id="downloadAll">⬇ 下載全部（PNG）</button>
+</div>
+
+<div class="deck">
+
+  <!-- ═══════════ 卡 1 · Hook 封面 ═══════════ -->
+  <div class="card-wrap">
+    <div class="card" data-filename="01-hook">
+      <div class="deco" style="width:340px;height:340px;top:-110px;left:-90px;background:var(--beige);opacity:.7;"></div>
+      <div class="frame"></div>
+      <div class="content">
+        <div class="hook-title">如果你是<br>30–50 歲、<br>正站在<em>人生轉彎位</em></div>
+        <div class="divider"></div>
+        <div class="hook-sub">工作走到交叉口<br>卻不確定下一步是否自己想要</div>
+        <div class="arrow">↓</div>
+        <div class="hook-cta">向右滑<br>看清<em>真正的方向</em></div>
+      </div>
+      <div class="handle">@lesterliang</div>
+    </div>
+    <button class="btn-dl" data-noexport>下載此卡</button>
+  </div>
+
+  <!-- ═══════════ 卡 2 · Statement 大字宣言 ═══════════ -->
+  <div class="card-wrap">
+    <div class="card" data-filename="02-statement">
+      <div class="deco" style="width:300px;height:300px;bottom:-100px;right:-80px;background:var(--sage);opacity:.45;"></div>
+      <div class="frame"></div>
+      <div class="content">
+        <div class="statement-kicker">你不需要很會規劃</div>
+        <div class="statement-lead">只需要願意：</div>
+        <div class="statement-body">如實看見此刻的位置<br>分辨外界期待與<br>你真正重視的事<br>然後<em>長出自己的選擇</em></div>
+      </div>
+      <div class="handle">@lesterliang</div>
+    </div>
+    <button class="btn-dl" data-noexport>下載此卡</button>
+  </div>
+
+  <!-- ═══════════ 卡 3 · 段落 + 藥丸條 ═══════════ -->
+  <div class="card-wrap">
+    <div class="card" data-filename="03-pills">
+      <div class="deco" style="width:280px;height:280px;top:-90px;right:-60px;background:var(--beige);opacity:.8;"></div>
+      <div class="frame"></div>
+      <div class="content left">
+        <div class="para">如果人生的轉變靠的是<strong>清晰</strong>，<br>你真正需要的，<br>不是更多意見和標準答案，<br>而是一套能回到日常的方法。</div>
+        <div class="divider short"></div>
+        <div class="kicker">而是讓自己知道：</div>
+        <div class="pill">我現在真正站在哪裡？</div>
+        <div class="pill alt">我有哪些可以比較的選擇？</div>
+        <div class="pill">哪一步是<strong>本週</strong>就能開始的？</div>
+      </div>
+      <div class="handle">@lesterliang</div>
+    </div>
+    <button class="btn-dl" data-noexport>下載此卡</button>
+  </div>
+
+  <!-- ═══════════ 卡 4 · 數字引號清單 ═══════════ -->
+  <div class="card-wrap">
+    <div class="card" data-filename="04-numbered">
+      <div class="deco" style="width:300px;height:300px;top:-100px;left:-80px;background:var(--sage);opacity:.4;"></div>
+      <div class="frame"></div>
+      <div class="content">
+        <div class="list-intro">因為好的選擇，<br>是一層一層<em>長出來</em>的。<br>慢慢覺得：</div>
+        <ul class="quote-list">
+          <li><span class="num">1</span>「我看得見自己的位置」</li>
+          <li><span class="num">2</span>「我知道為何走這步」</li>
+          <li><span class="num">3</span>「我想親自走下一段路」</li>
+        </ul>
+      </div>
+      <div class="handle">@lesterliang</div>
+    </div>
+    <button class="btn-dl" data-noexport>下載此卡</button>
+  </div>
+
+  <!-- ═══════════ 卡 5 · 四欄格（人生選擇設計法） ═══════════ -->
+  <div class="card-wrap">
+    <div class="card" data-filename="05-grid">
+      <div class="deco" style="width:320px;height:320px;bottom:-110px;left:-90px;background:var(--beige);opacity:.7;"></div>
+      <div class="frame"></div>
+      <div class="content">
+        <div class="statement-kicker" style="font-size:40px;">人生選擇設計法，五個階段：</div>
+        <div class="grid4">
+          <div class="cell"><span class="num">1</span><span class="word">根</span>
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2.5v8.5"/>
+              <path d="M12 6.5C9.4 6.5 7.6 4.9 7.6 2.3 10.2 2.3 12 3.9 12 6.5Z"/>
+              <path d="M12 6.5c2.6 0 4.4-1.6 4.4-4.2C13.8 2.3 12 3.9 12 6.5Z"/>
+              <path d="M3.5 11.5h17"/>
+              <path d="M12 11.5v9.5"/>
+              <path d="M12 15.5 8.6 18.5"/>
+              <path d="M12 18.5 15.4 21"/>
+            </svg></div>
+          <div class="cell"><span class="num">2</span><span class="word">幹</span>
+            <svg viewBox="0 0 24 24">
+              <path d="M12 22V2.5"/>
+              <path d="M12 8.5c2.6 0 4.4-1.6 4.4-4.4"/>
+              <path d="M12 8.5c-2.6 0-4.4-1.6-4.4-4.4"/>
+              <path d="M12 14c2.6 0 4.4-1.6 4.4-4.4"/>
+              <path d="M12 19c-2.6 0-4.4-1.6-4.4-4.4"/>
+            </svg></div>
+          <div class="cell"><span class="num">3</span><span class="word">枝</span>
+            <svg viewBox="0 0 24 24">
+              <path d="M12 22V8"/>
+              <path d="M12 8 4.5 2.5"/>
+              <path d="M12 8 19.5 2.5"/>
+              <path d="M12 14.5 6.5 10"/>
+              <path d="M12 14.5 17.5 10"/>
+            </svg></div>
+          <div class="cell"><span class="num">4</span><span class="word">葉</span>
+            <svg viewBox="0 0 24 24">
+              <path d="M3.5 20.5C3.5 10.5 10.5 3.5 20.5 3.5c0 10-7 17-17 17Z"/>
+              <path d="M3.5 20.5C6 14 10 10 15 7.5"/>
+              <path d="M8.5 15.5c1.6-.8 3-1.8 4-3"/>
+            </svg></div>
+        </div>
+        <div class="statement-kicker" style="font-size:38px;margin-top:12px;">第五步：<span class="forest" style="font-weight:700;">增加選擇</span></div>
+        <div class="para" style="font-size:36px;margin-top:24px;">累積時間、能力與空間，<br>讓未來<em>不只剩一條路</em>。</div>
+      </div>
+      <div class="handle">@lesterliang</div>
+    </div>
+    <button class="btn-dl" data-noexport>下載此卡</button>
+  </div>
+
+  <!-- ═══════════ 卡 6 · Note box 手寫感 + CTA ═══════════ -->
+  <div class="card-wrap">
+    <div class="card" data-filename="06-cta">
+      <div class="deco" style="width:340px;height:340px;top:-110px;right:-100px;background:var(--sage);opacity:.45;"></div>
+      <div class="frame"></div>
+      <div class="content">
+        <div class="para" style="font-size:40px;">清晰，不是立刻知道答案；<br>而是知道下一步<br><strong>為何值得走</strong>。</div>
+        <div class="divider"></div>
+        <div class="note-box">人生不是一次重大的決定，<br>而是一套可以持續運作的系統。</div>
+        <div class="arrow">↓</div>
+        <div class="hook-cta">DM「<em>盤點</em>」<br>預約一次人生盤點</div>
+      </div>
+      <div class="handle">@lesterliang</div>
+    </div>
+    <button class="btn-dl" data-noexport>下載此卡</button>
+  </div>
+
+</div>
+
+<script>
+// 等字體 + html2canvas 就緒
+let ready=false;
+document.fonts.ready.then(()=>{ready=true;});
+
+async function exportCard(card){
+  const name=card.dataset.filename||'post';
+  const canvas=await html2canvas(card,{width:1080,height:1350,scale:1,useCORS:true,backgroundColor:null});
+  const link=document.createElement('a');
+  link.download=name+'.png';
+  link.href=canvas.toDataURL('image/png');
+  link.click();
+}
+document.querySelectorAll('.btn-dl').forEach(btn=>{
+  btn.addEventListener('click',async()=>{
+    btn.disabled=true;const old=btn.textContent;btn.textContent='匯出中…';
+    await exportCard(btn.closest('.card-wrap').querySelector('.card'));
+    btn.textContent=old;btn.disabled=false;
+  });
+});
+document.getElementById('downloadAll').addEventListener('click',async(e)=>{
+  const btn=e.currentTarget;
+  if(!ready){btn.textContent='字體載入中…';await document.fonts.ready;ready=true;}
+  btn.disabled=true;
+  const cards=[...document.querySelectorAll('.card')];
+  for(let i=0;i<cards.length;i++){
+    btn.textContent='匯出中 '+(i+1)+' / '+cards.length;
+    await exportCard(cards[i]);
+    await new Promise(r=>setTimeout(r,400)); // 給瀏覽器觸發多檔下載
+  }
+  btn.textContent='⬇ 下載全部（PNG）';btn.disabled=false;
+});
+</script>
+</body>
+</html>
