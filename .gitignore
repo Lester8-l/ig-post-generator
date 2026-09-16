@@ -4,6 +4,9 @@ _tmp_pages/
 
 # 驗證暫存
 _verify/
+_verify*/
+_*_check.html
+dom.txt
 
 # 系統檔
 .DS_Store
