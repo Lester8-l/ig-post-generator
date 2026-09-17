@@ -61,6 +61,9 @@ body{background:#EDEAE3;font-family:var(--font-soft);padding:40px 20px 80px;}
 .controls input[type=text]:focus{outline:2px solid var(--gold-soft);border-color:var(--gold-soft);}
 .btn-edit{font-family:"Noto Sans TC",sans-serif;font-size:15px;font-weight:700;background:#fff;color:var(--forest);border:1.5px solid var(--forest);border-radius:999px;padding:9px 22px;cursor:pointer;}
 .btn-edit.on{background:var(--forest);color:#fff;}
+.kw-status{font-family:"Noto Sans TC",sans-serif;font-size:12.5px;color:var(--forest-soft);flex:1 1 100%;
+  padding-top:2px;line-height:1.6;}
+.kw-status.warn{color:#C0563C;font-weight:700;}
 .controls .tip{font-family:"Noto Sans TC",sans-serif;font-size:12.5px;color:#9a938a;flex:1 1 100%;line-height:1.7;}
 /* 編輯中：可改的字加虛線底，滑鼠移過去有提示 */
 .card .content[contenteditable="true"]{outline:2px dashed var(--gold-soft);outline-offset:6px;border-radius:8px;}
@@ -230,6 +233,7 @@ window.IG_CONFIG = {
   <label>金色關鍵字（逗號分隔）
     <input type="text" id="kwInput" value="真正的方向,盤點,90 天" style="min-width:320px">
   </label>
+  <div class="kw-status" id="kwStatus">尚未設定關鍵字</div>
   <div class="tip">
     按「✎ 編輯文字」後，直接點卡片上的字就能改，改完再按一次關閉。
     改太多會出現紅色「內容超出」警示 —— 那表示匯出會被裁掉，需要減字。
@@ -579,6 +583,11 @@ window.IG_CONFIG = {
 /* ============================================================
    ③  微調工具：關鍵字上色 / 編輯模式 / 超量警示
    ============================================================ */
+function textNodesIn(root){
+  var out = [], w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n;
+  while ((n = w.nextNode())) out.push(n);
+  return out;
+}
 function unwrapEm(root){
   root.querySelectorAll('em').forEach(function(em){
     var p = em.parentNode;
@@ -586,29 +595,92 @@ function unwrapEm(root){
     p.removeChild(em);
   });
 }
-function highlightIn(root, word){
-  var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  var nodes = [], n;
-  while ((n = walker.nextNode())) { if (n.nodeValue.indexOf(word) >= 0) nodes.push(n); }
-  nodes.forEach(function(node){
-    var s = node.nodeValue, frag = document.createDocumentFragment(), pos = 0, idx;
-    while ((idx = s.indexOf(word, pos)) >= 0) {
-      if (idx > pos) frag.appendChild(document.createTextNode(s.slice(pos, idx)));
-      var em = document.createElement('em'); em.textContent = word; frag.appendChild(em);
-      pos = idx + word.length;
-    }
-    if (pos < s.length) frag.appendChild(document.createTextNode(s.slice(pos)));
-    node.parentNode.replaceChild(frag, node);
-  });
+/** 把元素內所有文字攤平成一個字串（<br> 不佔長度，所以跨行也能配對） */
+function flatText(root){
+  return textNodesIn(root).map(function(n){ return n.nodeValue; }).join('');
 }
-/** 依 IG_CONFIG.keywords 重新幫文字上金色；編輯後再呼叫一次即可自動補回來 */
+/**
+ * 找第一個「還沒被 <em> 包住」的配對位置。
+ * 不做這層判斷的話，剛包好的 <em> 裡又有同樣的字，會被反覆包到爆。
+ */
+function findMatch(root, word){
+  var nodes = textNodesIn(root);
+  var flat = '', map = [];
+  nodes.forEach(function(n){
+    var inEm = !!(n.parentElement && n.parentElement.closest && n.parentElement.closest('em'));
+    var v = n.nodeValue;
+    for (var i = 0; i < v.length; i++) { flat += v[i]; map.push(inEm); }
+  });
+  var from = 0;
+  while (true) {
+    var idx = flat.indexOf(word, from);
+    if (idx < 0) return -1;
+    var ok = true;
+    for (var k = idx; k < idx + word.length; k++) { if (map[k]) { ok = false; break; } }
+    if (ok) return idx;
+    from = idx + 1;
+  }
+}
+/** 攤平後的第 index 個字 → 對應到 {node, offset} */
+function locate(root, index){
+  var acc = 0, nodes = textNodesIn(root);
+  for (var i = 0; i < nodes.length; i++) {
+    var len = nodes[i].nodeValue.length;
+    if (index <= acc + len) return { node: nodes[i], offset: index - acc };
+    acc += len;
+  }
+  return null;
+}
+/**
+ * 依 IG_CONFIG.keywords 重新幫文字上金色。
+ * 用 Range 跨節點包 <em>，所以關鍵字即使被 <br> 或 <strong> 切開也能配到。
+ * 回傳 { total, missing, hit } 供狀態提示使用。
+ */
 function applyKeywords(){
   var kw = (window.IG_CONFIG && window.IG_CONFIG.keywords) || [];
   kw = kw.filter(Boolean).slice().sort(function(a, b){ return b.length - a.length; });  // 長的先配
-  document.querySelectorAll('.card .content').forEach(function(ct){
+  var total = 0, missing = [], hit = {};
+  document.querySelectorAll('.card .content, .card .sticky').forEach(function(ct){
     unwrapEm(ct);
-    kw.forEach(function(w){ highlightIn(ct, w); });
+    kw.forEach(function(word){
+      var n = 0, guard = 0;
+      while (guard++ < 30) {
+        var idx = findMatch(ct, word);
+        if (idx < 0) break;
+        var s = locate(ct, idx), e = locate(ct, idx + word.length);
+        if (!s || !e) break;
+        var r = document.createRange();
+        r.setStart(s.node, s.offset);
+        r.setEnd(e.node, e.offset);
+        var em = document.createElement('em');
+        try {
+          em.appendChild(r.extractContents());   // 跨節點也能抽出來
+          r.insertNode(em);
+          n++;
+        } catch (err) { break; }
+      }
+      total += n;
+      if (n > 0) hit[word] = (hit[word] || 0) + n;
+    });
   });
+  kw.forEach(function(w){ if (!hit[w]) missing.push(w); });
+  var res = { total: total, missing: missing, hit: hit };
+  updateKwStatus(res);
+  return res;
+}
+/** 控制列的狀態提示：告訴使用者上了幾處、哪幾個詞找不到 */
+function updateKwStatus(res){
+  var el = document.getElementById('kwStatus');
+  if (!el) return;
+  var parts = [];
+  if (res.total) parts.push('✓ 已上色 ' + res.total + ' 處');
+  if (res.missing.length) {
+    parts.push('⚠ 找不到：' + res.missing.map(function(w){ return '「' + w + '」'; }).join('、')
+               + '（可能被斷行或不在此次文字中）');
+  }
+  if (!parts.length) parts.push('尚未設定關鍵字');
+  el.innerHTML = parts.join('　·　');
+  el.className = 'kw-status' + (res.missing.length && !res.total ? ' warn' : '');
 }
 
 /* ── 超量警示：內容超出卡片會被 overflow:hidden 靜默裁掉 ── */
