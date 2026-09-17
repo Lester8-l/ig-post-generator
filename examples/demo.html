@@ -54,6 +54,21 @@ body{background:#EDEAE3;font-family:var(--font-soft);padding:40px 20px 80px;}
 .btn-all{font-family:"Noto Sans TC",sans-serif;font-size:16px;font-weight:700;background:var(--forest);color:#fff;border:none;border-radius:999px;padding:12px 28px;cursor:pointer;}
 .btn-all:disabled{opacity:.5;cursor:wait;}
 .deck{max-width:1080px;margin:0 auto;display:flex;flex-direction:column;gap:56px;}
+/* ── 微調工具列（只出現在網頁上，不會畫進圖）── */
+.controls{max-width:1080px;margin:0 auto 28px;padding:18px 22px;background:#fff;border:1.5px solid var(--line-warm);border-radius:18px;display:flex;flex-wrap:wrap;gap:14px 18px;align-items:center;}
+.controls label{font-family:"Noto Sans TC",sans-serif;font-size:13px;color:var(--ink-soft);display:flex;align-items:center;gap:8px;}
+.controls input[type=text]{font-family:"Noto Sans TC",sans-serif;font-size:14px;padding:7px 12px;border:1.5px solid var(--line-warm);border-radius:10px;min-width:180px;color:var(--forest-deep);}
+.controls input[type=text]:focus{outline:2px solid var(--gold-soft);border-color:var(--gold-soft);}
+.btn-edit{font-family:"Noto Sans TC",sans-serif;font-size:15px;font-weight:700;background:#fff;color:var(--forest);border:1.5px solid var(--forest);border-radius:999px;padding:9px 22px;cursor:pointer;}
+.btn-edit.on{background:var(--forest);color:#fff;}
+.controls .tip{font-family:"Noto Sans TC",sans-serif;font-size:12.5px;color:#9a938a;flex:1 1 100%;line-height:1.7;}
+/* 編輯中：可改的字加虛線底，滑鼠移過去有提示 */
+.card .content[contenteditable="true"]{outline:2px dashed var(--gold-soft);outline-offset:6px;border-radius:8px;}
+.card .content[contenteditable="true"]:hover{outline-color:var(--gold);}
+/* 超量警示 */
+.ovf{position:absolute;top:64px;left:50%;transform:translateX(-50%);z-index:9;display:none;
+  font-family:"Noto Sans TC",sans-serif;font-size:17px;font-weight:700;color:#fff;background:#C0563C;
+  padding:8px 18px;border-radius:999px;box-shadow:0 4px 14px rgba(0,0,0,.12);}
 
 /* ============================================================
    卡片畫布 1080 × 1350
@@ -171,12 +186,30 @@ em{font-style:normal;color:var(--gold);}
 </head>
 <body>
 
+<!--
+  ═══════════════════════════════════════════════════════════════
+   想改文字？三種方式，挑你順手的：
+
+   ① 開瀏覽器 → 按「✎ 編輯文字」→ 直接點卡片上的字改
+      （推薦：所見即所得，改完再按一次按鈕關閉）
+
+   ② 改下面 IG_CONFIG 的 handle（帳號）、keywords（金色關鍵字）
+
+   ③ 直接改 HTML：搜尋 data-filename 找到該張卡，
+      改 .content 裡面的文字就好，不用動 class
+
+   改完按「⬇ 下載全部（PNG）」出圖。
+   字改太多會跳出紅色「內容超出」警示 = 匯出會被裁掉，需要減字。
+  ═══════════════════════════════════════════════════════════════
+-->
+
 <script>
 /* ============================================================
    ①  設定區 —— 每次生成貼文只需要改這裡
    ============================================================ */
 window.IG_CONFIG = {
-  handle : 'lesterleung_07',   // IG 帳號（不用加 @），換帳號只改這行
+  handle   : 'lesterleung_07',   // IG 帳號（不用加 @），換帳號只改這行
+  keywords : ['真正的方向', '盤點', '90 天'],   // 金色強調的關鍵字，改字後會自動重新上色
   leaves : true,               // 樹葉總開關：false = 全部卡片都不顯示
   logo   : false               // 右上角 logo：true 才顯示（10-heroillo 有放）
 };
@@ -188,6 +221,20 @@ window.IG_CONFIG = {
     <div class="hint">等字體載入完成（約 2–3 秒）再匯出，文字才不會跑版</div>
   </div>
   <button class="btn-all" id="downloadAll">⬇ 下載全部（PNG）</button>
+</div>
+
+<!-- ══════ 微調控制列：想改字、換帳號、調金色關鍵字都在這裡 ══════ -->
+<div class="controls" data-noexport>
+  <button class="btn-edit" id="editToggle">✎ 編輯文字</button>
+  <label>帳號 <input type="text" id="handleInput" value="lesterleung_07"></label>
+  <label>金色關鍵字（逗號分隔）
+    <input type="text" id="kwInput" value="真正的方向,盤點,90 天" style="min-width:320px">
+  </label>
+  <div class="tip">
+    按「✎ 編輯文字」後，直接點卡片上的字就能改，改完再按一次關閉。
+    改太多會出現紅色「內容超出」警示 —— 那表示匯出會被裁掉，需要減字。
+    金色關鍵字改完會自動重新上色，不用手動加標籤。
+  </div>
 </div>
 
 <div class="deck">
@@ -530,13 +577,115 @@ window.IG_CONFIG = {
 })();
 
 /* ============================================================
-   ③  匯出
+   ③  微調工具：關鍵字上色 / 編輯模式 / 超量警示
+   ============================================================ */
+function unwrapEm(root){
+  root.querySelectorAll('em').forEach(function(em){
+    var p = em.parentNode;
+    while (em.firstChild) p.insertBefore(em.firstChild, em);
+    p.removeChild(em);
+  });
+}
+function highlightIn(root, word){
+  var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  var nodes = [], n;
+  while ((n = walker.nextNode())) { if (n.nodeValue.indexOf(word) >= 0) nodes.push(n); }
+  nodes.forEach(function(node){
+    var s = node.nodeValue, frag = document.createDocumentFragment(), pos = 0, idx;
+    while ((idx = s.indexOf(word, pos)) >= 0) {
+      if (idx > pos) frag.appendChild(document.createTextNode(s.slice(pos, idx)));
+      var em = document.createElement('em'); em.textContent = word; frag.appendChild(em);
+      pos = idx + word.length;
+    }
+    if (pos < s.length) frag.appendChild(document.createTextNode(s.slice(pos)));
+    node.parentNode.replaceChild(frag, node);
+  });
+}
+/** 依 IG_CONFIG.keywords 重新幫文字上金色；編輯後再呼叫一次即可自動補回來 */
+function applyKeywords(){
+  var kw = (window.IG_CONFIG && window.IG_CONFIG.keywords) || [];
+  kw = kw.filter(Boolean).slice().sort(function(a, b){ return b.length - a.length; });  // 長的先配
+  document.querySelectorAll('.card .content').forEach(function(ct){
+    unwrapEm(ct);
+    kw.forEach(function(w){ highlightIn(ct, w); });
+  });
+}
+
+/* ── 超量警示：內容超出卡片會被 overflow:hidden 靜默裁掉 ── */
+function ensureBadge(card){
+  var b = card.querySelector('.ovf');
+  if (!b) {
+    b = document.createElement('div');
+    b.className = 'ovf'; b.setAttribute('data-noexport', '');
+    b.textContent = '⚠ 內容超出，匯出會被裁掉，請減字';
+    card.appendChild(b);
+  }
+  return b;
+}
+function checkOverflow(){
+  document.querySelectorAll('.card').forEach(function(card){
+    var ct = card.querySelector('.content'); if (!ct) return;
+    var kids = [].slice.call(ct.children).filter(function(k){ return k.getBoundingClientRect().height > 0; });
+    if (!kids.length) return;
+    var box = card.getBoundingClientRect();
+    var top = Math.min.apply(null, kids.map(function(k){ return k.getBoundingClientRect().top; }));
+    var bot = Math.max.apply(null, kids.map(function(k){ return k.getBoundingClientRect().bottom; }));
+    var over = (bot - (box.bottom - 56 - 80) > 2) || ((box.top + 56 + 80) - top > 2);
+    var b = ensureBadge(card);
+    b.style.display = over ? 'block' : 'none';
+    if (over) ct.classList.add('is-over'); else ct.classList.remove('is-over');
+  });
+}
+
+/* ── 編輯模式 ── */
+var editing = false;
+var editBtn = document.getElementById('editToggle');
+if (editBtn) {
+  editBtn.addEventListener('click', function(){
+    editing = !editing;
+    editBtn.classList.toggle('on', editing);
+    editBtn.textContent = editing ? '✓ 完成編輯' : '✎ 編輯文字';
+    document.querySelectorAll('.card .content').forEach(function(el){
+      if (editing) el.setAttribute('contenteditable', 'true');
+      else el.removeAttribute('contenteditable');
+    });
+    if (editing) { checkOverflow(); } else { document.querySelectorAll('.ovf').forEach(function(v){ v.style.display = 'none'; }); }
+  });
+}
+document.querySelectorAll('.card .content').forEach(function(el){
+  el.addEventListener('input', function(){ clearTimeout(el._t); el._t = setTimeout(checkOverflow, 150); });
+});
+
+/* ── 帳號 / 關鍵字輸入 ── */
+var handleIn = document.getElementById('handleInput');
+if (handleIn) {
+  handleIn.addEventListener('input', function(){
+    var v = ('@' + handleIn.value.trim()).replace(/^@@/, '@');
+    window.IG_CONFIG.handle = handleIn.value.trim();
+    document.querySelectorAll('.handle').forEach(function(el){ el.textContent = v; });
+  });
+}
+var kwIn = document.getElementById('kwInput');
+if (kwIn) {
+  kwIn.addEventListener('input', function(){
+    window.IG_CONFIG.keywords = kwIn.value.split(/[,，]/).map(function(s){ return s.trim(); }).filter(Boolean);
+    applyKeywords();
+  });
+}
+
+/* 初始上色 */
+if (window.IG_CONFIG && window.IG_CONFIG.keywords && window.IG_CONFIG.keywords.length) applyKeywords();
+
+/* ============================================================
+   ④  匯出
    ============================================================ */
 let ready = false;
 document.fonts.ready.then(()=>{ ready = true; });
 
 async function exportCard(card){
   const name = card.dataset.filename || 'post';
+  applyKeywords();                                     // 改過的字重新補金色
+  card.querySelectorAll('.ovf').forEach(function(v){ v.dataset._d = v.style.display; v.style.display = 'none'; });
   const canvas = await html2canvas(card,{
     width:1080, height:1350, scale:1, useCORS:true, backgroundColor:null
   });
@@ -544,6 +693,7 @@ async function exportCard(card){
   link.download = name + '.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
+  card.querySelectorAll('.ovf').forEach(function(v){ v.style.display = v.dataset._d || 'none'; });
 }
 document.querySelectorAll('.btn-dl').forEach(btn=>{
   btn.addEventListener('click', async ()=>{

@@ -94,7 +94,7 @@ def main():
     for i, name in enumerate(names, start=1):
         extra = f"""<style>
   body{{padding:0 !important;background:#FFFDF8 !important;}}
-  .toolbar,.btn-dl,.card-label{{display:none !important;}}
+  .toolbar,.controls,.btn-dl,.btn-edit,.card-label,.ovf,[data-noexport]{{display:none !important;}}
   .deck{{gap:0 !important;max-width:none !important;margin:0 !important;}}
   .card-wrap:not(:nth-child({i})){{display:none !important;}}
   .card-wrap{{gap:0 !important;}}
