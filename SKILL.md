@@ -14,19 +14,68 @@ agent_created: true
 
 ## 工作流程
 
+> **預設是「兩段式」**：先只交文字稿，等使用者改完回覆，才動手做 HTML。
+> 他要的是先改字、再定稿；直接生成 HTML 會讓他改在錯的地方（改圖比改字麻煩）。
+> 只有他明確說「直接做」「不用給文字稿」時，才跳到第 4 步。
+
+**第一段：出文字稿（不生成 HTML）**
+
 1. **讀輸入**：完整文章、幾段想法、或只有一個主題。
-2. **拆卡 + 選版**（關鍵步驟，見下節）：拆成 6–8 張，每張指定一款版型，**不要連續兩張用同一款**。
-3. **生成 HTML**：複製 `assets/template.html` 的完整結構與 CSS（連 `<style>`、base64 素材、SVG 元件一起），只替換每張卡 `.content` 內的文字。
-4. **改設定區**：`handle` 一定要改成這次要發的帳號；`leaves` 決定樹葉要不要顯示。
-5. **跑檢查**（三支都要跑，幾秒鐘）：
+2. **拆卡 + 選版**：拆成 6–9 張，每張指定一款版型，**不要連續兩張用同一款**（菜單見下節）。
+3. **寫文字稿並交付**：用下面的固定格式寫成 `文字稿.md`，用 `present_files` 給使用者，
+   然後**停下來等他回覆修改版**。這一步不要碰 HTML、不要出圖。
+
+**第二段：收到修改後的文字稿才開工**
+
+4. **生成 HTML**：複製 `assets/template.html` 的完整結構與 CSS（連 `<style>`、base64 素材、
+   SVG 元件一起），把文字稿逐卡填入。轉換規則：
+   - 文字稿的 `｜` → `<br>`
+   - `[open-title]` 的方括號內容 → 該元素的 class
+   - 每卡第一行的「版型 A5」→ 從菜單挑對應結構
+   - 「基本設定」的關鍵字 → `IG_CONFIG.keywords`、帳號 → `handle`、樹葉 → `leaves-top/bottom`
+5. **改設定區**：`handle`、`keywords`、`leaves`、`logo`。
+6. **跑檢查**（三支都要跑，幾秒鐘）：
    ```
-   python scripts/check-orphans.py <deck.html>          # 一個字一行
+   python scripts/check-orphans.py <deck.html>          # 一個字一行 + 結構完整性
    python scripts/check-fit.py <deck.html>              # 內容裝不下被裁切
    python scripts/export-png.py <deck.html> --out out/  # 出圖
    ```
-   留白低於 50px 就減字或降字級；有孤字就手動 `<br>` 重排。修好再交付。
-6. **交付**：`present_files` 同時給 HTML（可預覽、可微調）與 PNG（可直接發）。
+   留白低於 50px 就減字或降字級；有孤字／結構破損就修好再交付。
+7. **交付**：`present_files` 同時給 HTML（可預覽、可微調）與 PNG（可直接發）。
    口頭提醒一句：「想改字就開 HTML 按 ✎ 編輯文字，改太多會跳紅色警示。」
+
+想把已完成的貼文反推成文字稿（例如要再改一輪），用：
+
+```bash
+python scripts/make-draft.py post.html     # → post-文字稿.md
+```
+
+## 文字稿格式（第一段的交付物）
+
+```markdown
+# 貼文文字稿
+
+## 基本設定
+- 帳號：lesterleung_07
+- 金色關鍵字：成功學, 精神大力丸, 方法, 清醒
+- 樹葉：01 頂、09 底
+- 語言：粵語（或 書面語）
+
+---
+
+## 卡 01-cover · 封面＋插畫　🌿樹葉在頂
+- 版型：A1
+- [open-title] 成功學，｜新時代嘅精神大力丸
+- [hook-sub] 我學咗咁多，最後只係｜沉迷喺好睇但空心嘅幻想。
+```
+
+規則：
+- **一行一顆 `-`**，對應一個文字元素，方括號內是 class。
+- **`｜` = 換行**。使用者只要在該處加／刪 `｜` 就能控制斷行，不必理解 HTML。
+- 每張卡第一行寫 **`- 版型：A5`**，讓他能直接換版型。
+- 寫稿時就要對照每行字數預算（見下面「排版」節）；超出的行他改稿時會看不到問題，
+  所以寧可一開始就寫短。
+- 交稿時附一句：「改完直接丟回來，我就開工。」
 
 ## 版型菜單（12 款，每次挑選組合）
 
@@ -183,6 +232,7 @@ python ~/.workbuddy/skills/html-render-verify/scripts/extract-tokens.py https://
 
 - `assets/template.html` — 主模板：12 款版型 + 設定區 + base64 樹葉 + 全部 SVG 元件 + 瀏覽器匯出。
 - `assets/leaf-bg.png` — 樹葉素材原始檔（可換）。
+- `scripts/make-draft.py` — 把成品 HTML 反推成文字稿（改稿／二次校對用）。
 - `scripts/export-png.py` — headless Chrome 批次出 1080×1350 PNG，零依賴。
 - `scripts/check-orphans.py` — 偵測「一個字一行」（會跳過旋轉元素），有問題 exit 1。
 - `scripts/check-fit.py` — 量每張卡內容高度與上下留白，抓溢出裁切，有問題 exit 1。

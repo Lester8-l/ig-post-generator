@@ -54,7 +54,8 @@ ig-post-skill/
 │  └─ leaf-bg.png        # 樹葉素材（1280×1150 透明 PNG，可換）
 ├─ scripts/
 │  ├─ export-png.py      # headless Chrome 批次出圖（零依賴）
-│  ├─ check-orphans.py   # 偵測「一個字一行」
+│  ├─ make-draft.py      # 成品 HTML 反推成文字稿
+│  ├─ check-orphans.py   # 偵測「一個字一行」＋結構完整性
 │  ├─ check-fit.py       # 偵測內容溢出裁切（含垂直置中量測）
 │  ├─ embed-leaf.py      # 把樹葉 PNG 內嵌成 base64
 │  └─ make-leaf-bg.py    # 從棋盤格 JPG 去背成透明 PNG
@@ -62,6 +63,36 @@ ig-post-skill/
    ├─ demo.html          # 示範成品（Lester「人生選擇設計法」六卡）
    ├─ example-article.md # 示範輸入文章
    └─ *.png              # 六張 1080×1350 成品
+```
+
+## 流程：先出文字稿，你改完我才開工
+
+```
+你給文章
+   ↓
+① 我出「文字稿」──────→ 你直接改字（改完丟回來）
+   ↓
+② 我照你改好的稿生成 HTML → 出圖 → 交付
+```
+
+**為什麼要分兩段**：文字改起來快，圖改起來慢。先在文字稿上定稿，比事後改 12 張圖省事。
+
+文字稿長這樣（`｜` = 換行，方括號是元素類型）：
+
+```markdown
+## 卡 03-titles · 數字引號清單
+- 版型：A11
+- [li] 「99% 的人唔知道……」
+- [li] 「你一定要……」
+- [mini-body] 呢啲就係新時代嘅精神大力丸。
+```
+
+改稿時你會看到每行幾個字、這個框一行吃得下幾個字；出現 **⚠被硬斷** 就是太長了。
+
+想把做好的貼文反推成文字稿（要再改一輪時）：
+
+```bash
+python scripts/make-draft.py post.html     # → post-文字稿.md
 ```
 
 ## 12 款版型菜單
