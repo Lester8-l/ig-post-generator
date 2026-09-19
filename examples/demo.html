@@ -146,10 +146,10 @@ em{font-style:normal;color:var(--gold);}
 .split .col-pills{display:flex;flex-direction:column;gap:20px;flex:0 0 auto;}
 /* 2×2 編號卡片格（參考圖 2） */
 .grid2x2{display:grid;grid-template-columns:1fr 1fr;gap:26px;width:100%;}
-.grid2x2 .cell{position:relative;background:var(--paper);border-radius:34px;padding:32px 36px 92px;text-align:left;min-height:312px;}
+.grid2x2 .cell{position:relative;background:var(--paper);border-radius:34px;padding:28px 34px 88px;text-align:left;min-height:290px;}
 .grid2x2 .cell:nth-child(even){background:var(--forest-tint);}
-.grid2x2 .cell-num{display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:50%;background:var(--forest);color:#fff;font-family:var(--font-en);font-size:30px;font-weight:600;margin-bottom:22px;}
-.grid2x2 .cell-word{font-family:var(--font-title);font-size:58px;font-weight:700;color:var(--forest-deep);line-height:1.35;margin-bottom:14px;}
+.grid2x2 .cell-num{display:inline-flex;align-items:center;justify-content:center;width:54px;height:54px;border-radius:50%;background:var(--forest);color:#fff;font-family:var(--font-en);font-size:29px;font-weight:600;margin-bottom:16px;}
+.grid2x2 .cell-word{font-family:var(--font-title);font-size:56px;font-weight:700;color:var(--forest-deep);line-height:1.3;margin-bottom:10px;}
 .grid2x2 .cell-desc{font-family:var(--font-soft);font-size:33px;line-height:1.7;color:var(--ink-soft);}
 .grid2x2 .illo-icon{position:absolute;right:32px;bottom:30px;width:80px;height:80px;}
 
@@ -157,7 +157,8 @@ em{font-style:normal;color:var(--gold);}
 .note-box{background:var(--paper);border-radius:32px;padding:46px 66px;font-family:var(--font-hand);font-size:48px;line-height:1.95;color:var(--forest-soft);letter-spacing:.08em;font-weight:400;text-align:center;}
 .num{display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;flex-shrink:0;background:var(--forest);color:#fff;font-family:var(--font-en);font-size:34px;font-weight:600;}
 .quote-list{list-style:none;display:flex;flex-direction:column;gap:36px;text-align:left;}
-.quote-list li{display:flex;align-items:center;gap:36px;font-family:var(--font-title);font-size:52px;font-weight:700;color:var(--forest-deep);line-height:1.6;}
+.quote-list li{display:block;position:relative;padding-left:100px;font-family:var(--font-title);font-size:52px;font-weight:700;color:var(--forest-deep);line-height:1.6;}
+.quote-list li .num{position:absolute;left:0;top:50%;transform:translateY(-50%);}
 .grid4{display:flex;gap:24px;width:100%;justify-content:center;margin:48px 0;}
 .grid4 .cell{flex:1;max-width:196px;background:var(--forest-tint);border-radius:28px;padding:34px 12px 36px;display:flex;flex-direction:column;align-items:center;gap:20px;}
 .grid4 .cell:nth-child(even){background:var(--paper);}
@@ -608,8 +609,9 @@ function findMatch(root, word){
   var flat = '', map = [];
   nodes.forEach(function(n){
     var inEm = !!(n.parentElement && n.parentElement.closest && n.parentElement.closest('em'));
+    var blank = !n.nodeValue.trim();           // 純空白（排版縮排）不可作為配對位置
     var v = n.nodeValue;
-    for (var i = 0; i < v.length; i++) { flat += v[i]; map.push(inEm); }
+    for (var i = 0; i < v.length; i++) { flat += v[i]; map.push(inEm || blank); }
   });
   var from = 0;
   while (true) {
@@ -621,15 +623,27 @@ function findMatch(root, word){
     from = idx + 1;
   }
 }
-/** 攤平後的第 index 個字 → 對應到 {node, offset} */
-function locate(root, index){
+/**
+ * 攤平後的第 index 個字 → 對應到 {node, offset}
+ * 注意邊界：index 剛好等於某節點結尾時，要取「下一個節點的 offset 0」。
+ * 若取成前一個節點的結尾，Range 會跨過元素邊界，extractContents() 就會
+ * 把整個子樹複製一份（例：<em><span class="pill">字</span></em> + 空 span）。
+ */
+function locate(root, index, preferNext){
   var acc = 0, nodes = textNodesIn(root);
   for (var i = 0; i < nodes.length; i++) {
     var len = nodes[i].nodeValue.length;
-    if (index <= acc + len) return { node: nodes[i], offset: index - acc };
+    if (index < acc + len) return { node: nodes[i], offset: index - acc };
+    if (index === acc + len) {
+      // 起點用「下一個節點的 0」、終點用「本節點的結尾」——
+      // 兩者視覺位置相同，但這樣 Range 才不會跨出元素，避免 extractContents 複製子樹
+      if (preferNext && nodes[i + 1]) return { node: nodes[i + 1], offset: 0 };
+      return { node: nodes[i], offset: len };
+    }
     acc += len;
   }
-  return null;
+  var last = nodes[nodes.length - 1];
+  return last ? { node: last, offset: last.nodeValue.length } : null;
 }
 /**
  * 依 IG_CONFIG.keywords 重新幫文字上金色。
@@ -647,7 +661,7 @@ function applyKeywords(){
       while (guard++ < 30) {
         var idx = findMatch(ct, word);
         if (idx < 0) break;
-        var s = locate(ct, idx), e = locate(ct, idx + word.length);
+        var s = locate(ct, idx, true), e = locate(ct, idx + word.length, false);
         if (!s || !e) break;
         var r = document.createRange();
         r.setStart(s.node, s.offset);

@@ -118,7 +118,24 @@ PROBE_TEMPLATE = r"""
         }
       }
     });
-    finish({ report: report, skipped: skipped });
+    // 結構完整性：關鍵字上色（Range + extractContents）若位置算錯，
+    // 會把整個子樹複製進 <em>（例如 <em><span class="pill">字</span></em> + 空 span）。
+    // 這種破損畫面上幾乎看不出來，但會讓藥丸變窄、文字換行錯亂。
+    var struct = { badWrap: [], empty: [] };
+    document.querySelectorAll('.card .content em').forEach(function(em){
+      var bad = em.querySelector(':scope > span, :scope > div, :scope > p, :scope > img, :scope > svg');
+      if (bad) struct.badWrap.push((bad.className || bad.tagName) + ' ← ' + em.textContent.slice(0, 12));
+    });
+    // 只檢查「本來就該有文字」的類別，避免裝飾元素（.divider 等）誤判
+    var NEEDS_TEXT = '.pill,.pill-sm,.para,.mini-body,.hook-title,.hook-sub,.hook-cta,'
+                   + '.statement-kicker,.statement-lead,.statement-body,.quote-list li,'
+                   + '.note-box,.cell-word,.cell-desc,.list-intro,.kicker,.hand-line,'
+                   + '.open-title,.big-2line,.circled-text,.sticky span,.handle';
+    document.querySelectorAll('.card .content ' + NEEDS_TEXT).forEach(function(el){
+      if (el.querySelector('img, svg')) return;
+      if (!el.textContent.trim()) struct.empty.push(el.className || el.tagName);
+    });
+    finish({ report: report, skipped: skipped, struct: struct });
   }
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(function(){ setTimeout(run, 1200); });
@@ -198,8 +215,18 @@ def main():
         sys.exit(2)
     report = payload.get("report", [])
     skipped = payload.get("skipped", 0)
+    struct = payload.get("struct", {"badWrap": [], "empty": []})
     if skipped:
         print(f"（已跳過 {skipped} 個旋轉／標記元素，逐字分行對它們不適用）")
+
+    if struct["badWrap"] or struct["empty"]:
+        print("✗ 關鍵字上色破壞了 DOM 結構（畫面上不易察覺，但會讓排版走樣）：")
+        for b in struct["badWrap"][:8]:
+            print(f"    <em> 直接包住了元素：{b}")
+        for e in struct["empty"][:8]:
+            print(f"    空元素殘留（被掏空）：{e}")
+        print("    成因通常是索引落點算錯、Range 跨出元素邊界。")
+        sys.exit(1)
 
     if not report:
         print(f"✓ 沒有孤字。所有多行文字區塊每行都 ≥ {args.min_chars} 個字。")
